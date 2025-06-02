@@ -4,7 +4,6 @@ import platform
 import requests
 from bs4 import BeautifulSoup
 from .utils import load_json_file, save_json_file
-from .nsfw_detector import NSFWDetector
 import re
 import subprocess
 import time
@@ -22,9 +21,6 @@ class ContentFilter:
             self.original_hosts = f.read()
         
         self.hosts = Hosts(path=self.hosts_path)
-        
-        # Initialize NSFW detector
-        self.nsfw_detector = NSFWDetector()
         
         # Load keywords
         self.keywords_file = "blocked_keywords.json"
@@ -226,25 +222,6 @@ class ContentFilter:
             is_inappropriate, reason = self.check_content(url, text_content)
             if is_inappropriate:
                 return True, reason
-            
-            # Only check images if NSFW detection is available
-            if self.nsfw_detector.is_available():
-                # Check images
-                for img in soup.find_all('img'):
-                    img_url = img.get('src')
-                    if img_url:
-                        if not img_url.startswith('http'):
-                            img_url = url + img_url if url.endswith('/') else url + '/' + img_url
-                        try:
-                            img_response = requests.get(img_url)
-                            with open('temp_image.jpg', 'wb') as f:
-                                f.write(img_response.content)
-                            is_nsfw, score = self.nsfw_detector.is_nsfw('temp_image.jpg')
-                            if is_nsfw:
-                                return True, f"NSFW image detected (confidence: {score:.2%})"
-                            os.remove('temp_image.jpg')
-                        except:
-                            continue
             
             return False, ""
         except Exception as e:

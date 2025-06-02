@@ -37,3 +37,27 @@ The application will start in the system tray. Right-click the tray icon to acce
 - Python 3.7+
 - PyQt5
 - Windows OS (primary support)
+
+## Building the Executable
+
+1. Make sure you have Python installed
+2. Download an icon file and save it as `app.ico` in the project folder
+   - You can find free icons at IconEden or other icon websites
+   - The icon must be in `.ico` format
+
+3. Run the build script:
+   ```batch
+   build.bat
+   ```
+
+4. The executable will be created in the `dist` folder as `NSFW_Blocker.exe`
+
+## Running the Application
+
+1. The application requires administrator privileges to modify the hosts file
+2. Right-click `NSFW_Blocker.exe` and select "Run as administrator"
+3. The application will run in the system tray
+
+## Credits
+
+Created by Mustaffa96 (https://github.com/Mustaffa96/NSFW_BlockerQT)

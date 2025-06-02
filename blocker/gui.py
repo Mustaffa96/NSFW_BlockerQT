@@ -1,13 +1,116 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QSystemTrayIcon, QMenu, QAction, QTextEdit, QLabel,
-                             QLineEdit, QTabWidget, QComboBox, QMessageBox, QApplication)
+                             QLineEdit, QTabWidget, QComboBox, QMessageBox, QApplication,
+                             QDialog, QFileDialog, QScrollArea)
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 import json
 import os
 import ctypes
 from .filter import ContentFilter
 from .utils import is_valid_url
+
+class AppreciationDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Welcome!")
+        self.setFixedSize(500, 300)
+        
+        layout = QVBoxLayout()
+        
+        # Title
+        title = QLabel("NSFW Blocker")
+        title_font = QFont()
+        title_font.setPointSize(16)
+        title_font.setBold(True)
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        
+        # Create scroll area for message
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QScrollBar:vertical {
+                width: 10px;
+            }
+            QScrollBar::handle:vertical {
+                background: #888;
+                border-radius: 5px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+        """)
+        
+        # Message container widget
+        message_container = QWidget()
+        message_layout = QVBoxLayout(message_container)
+        
+        # Message
+        message = QLabel(
+            "Special thanks to GitHub user Mustaffa96 for creating this valuable "
+            "tool to help make the internet a safer place. This NSFW content blocker "
+            "represents a commitment to online safety and content filtering.\n\n"
+            "Key Features:\n"
+            "• URL and Domain Blocking\n"
+            "- Block specific websites and domains\n"
+            "- Import multiple URLs from text files\n"
+            "- Automatic URL validation\n\n"
+            "• Keyword-based Content Filtering\n"
+            "- Block content based on keywords\n"
+            "- Separate explicit and moderate categories\n"
+            "- Customizable filtering rules\n\n"
+            "• System Tray Integration\n"
+            "- Run in background\n"
+            "- Quick access to controls\n"
+            "- Minimize to system tray\n\n"
+            "• User-friendly Interface\n"
+            "- Easy to use controls\n"
+            "- Clear status indicators\n"
+            "- Intuitive layout\n\n"
+            "Visit: github.com/Mustaffa96/NSFW_BlockerQT\n\n"
+            "Usage Tips:\n"
+            "1. Run as administrator to modify system files\n"
+            "2. Use the URL import feature for bulk blocking\n"
+            "3. Customize keyword categories as needed\n"
+            "4. Keep the application running in the background\n"
+            "5. Check the blocking status indicator"
+        )
+        message.setWordWrap(True)
+        message.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        message_font = QFont()
+        message_font.setPointSize(10)
+        message.setFont(message_font)
+        
+        message_layout.addWidget(message)
+        message_layout.addStretch()
+        
+        scroll_area.setWidget(message_container)
+        layout.addWidget(scroll_area)
+        
+        # OK button
+        ok_button = QPushButton("Start Application")
+        ok_button.setStyleSheet("""
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                padding: 8px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+            }
+        """)
+        ok_button.clicked.connect(self.accept)
+        layout.addWidget(ok_button)
+        
+        self.setLayout(layout)
 
 def is_admin():
     try:
@@ -18,6 +121,11 @@ def is_admin():
 class BlockerWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+        # Show appreciation dialog
+        dialog = AppreciationDialog(self)
+        dialog.exec_()
+        
         self.setWindowTitle("NSFW Blocker")
         self.setGeometry(100, 100, 800, 600)
         
@@ -52,107 +160,121 @@ class BlockerWindow(QMainWindow):
         url_label = QLabel("Enter URL to block:")
         self.url_input = QLineEdit()
         
+        url_buttons_layout = QHBoxLayout()
+        
         add_url_button = QPushButton("Add URL")
         add_url_button.clicked.connect(self.add_url)
         
+        import_urls_button = QPushButton("Import URLs from File")
+        import_urls_button.clicked.connect(self.import_urls_from_file)
+        import_urls_button.setStyleSheet("""
+            QPushButton {
+                background-color: #17a2b8;
+                color: white;
+                padding: 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #138496;
+            }
+        """)
+        
+        url_buttons_layout.addWidget(add_url_button)
+        url_buttons_layout.addWidget(import_urls_button)
+        
         self.url_list = QTextEdit()
         self.url_list.setReadOnly(True)
-        self.update_url_list()
         
         url_layout.addWidget(url_label)
         url_layout.addWidget(self.url_input)
-        url_layout.addWidget(add_url_button)
-        url_layout.addWidget(QLabel("Blocked URLs:"))
+        url_layout.addLayout(url_buttons_layout)
         url_layout.addWidget(self.url_list)
         
         # Keyword blocking tab
         keyword_tab = QWidget()
         keyword_layout = QVBoxLayout(keyword_tab)
         
-        keyword_header = QHBoxLayout()
         keyword_label = QLabel("Enter keyword to block:")
+        self.keyword_input = QLineEdit()
+        
+        category_layout = QHBoxLayout()
+        category_label = QLabel("Category:")
         self.keyword_category = QComboBox()
         self.keyword_category.addItems(["explicit", "moderate"])
-        keyword_header.addWidget(keyword_label)
-        keyword_header.addWidget(self.keyword_category)
+        category_layout.addWidget(category_label)
+        category_layout.addWidget(self.keyword_category)
         
-        self.keyword_input = QLineEdit()
         add_keyword_button = QPushButton("Add Keyword")
         add_keyword_button.clicked.connect(self.add_keyword)
         
         self.keyword_list = QTextEdit()
         self.keyword_list.setReadOnly(True)
-        self.update_keyword_list()
         
-        keyword_layout.addLayout(keyword_header)
+        keyword_layout.addWidget(keyword_label)
         keyword_layout.addWidget(self.keyword_input)
+        keyword_layout.addLayout(category_layout)
         keyword_layout.addWidget(add_keyword_button)
-        keyword_layout.addWidget(QLabel("Blocked Keywords:"))
         keyword_layout.addWidget(self.keyword_list)
-        
-        # Settings tab
-        settings_tab = QWidget()
-        settings_layout = QVBoxLayout(settings_tab)
-        
-        # NSFW detection status
-        nsfw_status = QLabel()
-        if self.content_filter.nsfw_detector.is_available():
-            nsfw_status.setText("NSFW Detection: Available")
-            
-            # NSFW detection threshold
-            threshold_layout = QHBoxLayout()
-            threshold_label = QLabel("NSFW Detection Threshold:")
-            self.threshold_input = QLineEdit()
-            self.threshold_input.setText("0.85")
-            self.threshold_input.setMaximumWidth(100)
-            threshold_layout.addWidget(threshold_label)
-            threshold_layout.addWidget(self.threshold_input)
-            threshold_layout.addStretch()
-            
-            apply_settings = QPushButton("Apply Settings")
-            apply_settings.clicked.connect(self.apply_settings)
-            
-            settings_layout.addLayout(threshold_layout)
-            settings_layout.addWidget(apply_settings)
-        else:
-            nsfw_status.setText("NSFW Detection: Not Available\nInstall TensorFlow to enable image detection")
-        
-        settings_layout.addWidget(nsfw_status)
-        settings_layout.addStretch()
         
         # Add tabs
         tabs.addTab(url_tab, "URL Blocking")
         tabs.addTab(keyword_tab, "Keyword Blocking")
-        tabs.addTab(settings_tab, "Settings")
         
         # Add tabs to main layout
         layout.addWidget(tabs)
         
-        # Bottom buttons layout
-        bottom_layout = QHBoxLayout()
-        
-        # Enable/Disable button
+        # Status and control
+        status_layout = QHBoxLayout()
+        self.status_label = QLabel("Blocking is currently disabled")
         self.toggle_button = QPushButton("Enable Blocking")
         self.toggle_button.clicked.connect(self.toggle_blocking)
-        bottom_layout.addWidget(self.toggle_button)
         
-        # Flush DNS button
-        flush_dns_button = QPushButton("Flush DNS Cache")
-        flush_dns_button.clicked.connect(self.flush_dns)
-        bottom_layout.addWidget(flush_dns_button)
+        status_layout.addWidget(self.status_label)
+        status_layout.addWidget(self.toggle_button)
+        layout.addLayout(status_layout)
         
-        # Close button
+        # Bottom buttons layout
+        button_layout = QHBoxLayout()
+        
+        # Close button with red background
         close_button = QPushButton("Close Application")
-        close_button.clicked.connect(self.close_application)
-        close_button.setStyleSheet("background-color: #d9534f; color: white;")
-        bottom_layout.addWidget(close_button)
+        close_button.clicked.connect(self.quit_application)
+        close_button.setStyleSheet("""
+            QPushButton {
+                background-color: #dc3545;
+                color: white;
+                padding: 8px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #c82333;
+            }
+        """)
+        button_layout.addWidget(close_button)
+        layout.addLayout(button_layout)
         
-        layout.addLayout(bottom_layout)
+        # Load current lists
+        self.update_url_list()
+        self.update_keyword_list()
+
+    def setup_tray(self):
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(self.style().standardIcon(self.style().SP_DialogNoButton))
         
-        # Status label
-        self.status_label = QLabel("Blocking is currently disabled")
-        self.status_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.status_label)
+        # Create tray menu
+        tray_menu = QMenu()
+        show_action = QAction("Show", self)
+        quit_action = QAction("Exit", self)
+        
+        show_action.triggered.connect(self.show)
+        quit_action.triggered.connect(self.quit_application)
+        
+        tray_menu.addAction(show_action)
+        tray_menu.addAction(quit_action)
+        
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
     
     def flush_dns(self):
         """Manually flush the DNS cache"""
@@ -171,38 +293,18 @@ class BlockerWindow(QMainWindow):
     
     def close_application(self):
         """Properly close the application"""
-        reply = QMessageBox.question(self, 'Confirm Exit',
-                                   'Are you sure you want to exit?\nBlocking will be disabled.',
-                                   QMessageBox.Yes | QMessageBox.No,
-                                   QMessageBox.No)
+        reply = QMessageBox.question(
+            self, 'Exit Confirmation',
+            'Are you sure you want to exit the application?',
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
         
         if reply == QMessageBox.Yes:
-            # Ensure blocking is disabled
+            # Ensure blocking is disabled when quitting
             if self.blocking_enabled:
-                if not self.content_filter.disable_blocking():
-                    QMessageBox.warning(self, "Warning", 
-                                      "Failed to disable blocking.\nYou may need to manually restore the hosts file.")
-            
-            # Quit application
-            self.quit_application()
-    
-    def setup_tray(self):
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(self.style().standardIcon(self.style().SP_DialogNoButton))
-        
-        # Create tray menu
-        tray_menu = QMenu()
-        show_action = QAction("Show", self)
-        quit_action = QAction("Exit", self)
-        
-        show_action.triggered.connect(self.show)
-        quit_action.triggered.connect(self.close_application)
-        
-        tray_menu.addAction(show_action)
-        tray_menu.addAction(quit_action)
-        
-        self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.show()
+                self.content_filter.disable_blocking()
+            QApplication.quit()
     
     def add_url(self):
         if not is_admin():
@@ -221,6 +323,57 @@ class BlockerWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "Invalid URL", "Please enter a valid URL")
     
+    def import_urls_from_file(self):
+        """Import URLs from a text file"""
+        if not is_admin():
+            QMessageBox.warning(self, "Admin Rights Required", 
+                              "Administrator privileges are required to modify the hosts file.")
+            return
+            
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select URLs File",
+            "",
+            "Text Files (*.txt);;All Files (*.*)"
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, 'r') as file:
+                    urls = [line.strip() for line in file if line.strip()]
+                
+                # Filter valid URLs
+                valid_urls = []
+                invalid_urls = []
+                
+                for url in urls:
+                    if is_valid_url(url):
+                        valid_urls.append(url)
+                    else:
+                        invalid_urls.append(url)
+                
+                # Add valid URLs
+                success_count = 0
+                for url in valid_urls:
+                    if self.content_filter.block_url(url):
+                        success_count += 1
+                
+                # Update the URL list
+                self.update_url_list()
+                
+                # Show results
+                message = f"Successfully added {success_count} URLs."
+                if invalid_urls:
+                    message += f"\n\nSkipped {len(invalid_urls)} invalid URLs:"
+                    message += "\n" + "\n".join(invalid_urls[:10])
+                    if len(invalid_urls) > 10:
+                        message += f"\n... and {len(invalid_urls) - 10} more"
+                
+                QMessageBox.information(self, "Import Results", message)
+                
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to import URLs: {str(e)}")
+
     def add_keyword(self):
         keyword = self.keyword_input.text().strip()
         category = self.keyword_category.currentText()
@@ -245,19 +398,8 @@ class BlockerWindow(QMainWindow):
         self.keyword_list.setText("\n".join(text))
     
     def apply_settings(self):
-        if not self.content_filter.nsfw_detector.is_available():
-            return
-            
-        try:
-            threshold = float(self.threshold_input.text())
-            if 0 <= threshold <= 1:
-                self.content_filter.nsfw_detector.set_threshold(threshold)
-                QMessageBox.information(self, "Success", "Settings applied successfully")
-            else:
-                raise ValueError("Threshold must be between 0 and 1")
-        except ValueError as e:
-            QMessageBox.warning(self, "Invalid Input", str(e))
-    
+        pass  # Remove settings functionality since it was only for NSFW detection
+
     def toggle_blocking(self):
         if not is_admin():
             QMessageBox.warning(self, "Admin Rights Required", 
@@ -281,19 +423,32 @@ class BlockerWindow(QMainWindow):
                     QMessageBox.information(self, "Success", "Blocking has been disabled")
                 else:
                     QMessageBox.warning(self, "Error", "Failed to disable blocking")
-            
-            # Update tray icon
-            icon = self.style().SP_DialogYesButton if self.blocking_enabled else self.style().SP_DialogNoButton
-            self.tray_icon.setIcon(self.style().standardIcon(icon))
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
     
     def quit_application(self):
-        # Ensure blocking is disabled when quitting
-        if self.blocking_enabled:
-            self.content_filter.disable_blocking()
-        QApplication.quit()
-    
+        """Properly close the application"""
+        reply = QMessageBox.question(
+            self, 'Exit Confirmation',
+            'Are you sure you want to exit the application?',
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            # Ensure blocking is disabled when quitting
+            if self.blocking_enabled:
+                self.content_filter.disable_blocking()
+            QApplication.quit()
+
+    def changeEvent(self, event):
+        """Handle window state changes"""
+        if event.type() == event.WindowStateChange:
+            if self.windowState() & Qt.WindowMinimized:
+                event.accept()
+                self.hide()  # Hide from taskbar
+                self.tray_icon.show()  # Ensure tray icon is visible
+            
     def closeEvent(self, event):
         event.ignore()
         self.hide()
