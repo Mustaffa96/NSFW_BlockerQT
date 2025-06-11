@@ -1,14 +1,28 @@
 # NSFW Blocker QT
 
-A content filtering application built with PyQt5 that helps block unwanted NSFW content.
+A powerful content filtering application built with PyQt5 that helps protect users from unwanted NSFW (Not Safe For Work) content through intelligent URL blocking and content analysis.
 
-## Features
+## Key Features
 
-- System tray integration for background running
-- URL and keyword-based content filtering
-- Easy-to-use graphical interface
-- Configurable blocking rules
-- Activity logging
+- **Advanced Content Filtering**
+  - URL and domain-based blocking
+  - Keyword-based content detection
+  - Separate explicit and moderate content categories
+  - Real-time content analysis with scoring system
+  - Bulk URL import capability
+
+- **User-Friendly Interface**
+  - Modern and intuitive PyQt5-based GUI
+  - System tray integration for background operation
+  - Clear visual indicators for content safety
+  - Progress bars showing safety scores
+  - Detailed match reporting
+
+- **System Integration**
+  - Runs efficiently in the background
+  - Administrator mode for system-level blocking
+  - Automatic DNS cache management
+  - Persistent settings storage
 
 ## Installation
 
@@ -25,39 +39,65 @@ pip install -r requirements.txt
 
 ## Usage
 
-Run the application:
+1. Run the application with administrator privileges:
 ```bash
 python main.py
 ```
 
-The application will start in the system tray. Right-click the tray icon to access settings and controls.
+2. The application will start with a welcome screen and minimize to the system tray
+3. Access features through the system tray icon:
+   - Add/remove blocked URLs
+   - Manage keyword filters
+   - Toggle blocking on/off
+   - View content analysis results
 
 ## Requirements
 
 - Python 3.7+
 - PyQt5
 - Windows OS (primary support)
+- Administrator privileges for system modifications
 
 ## Building the Executable
 
-1. Make sure you have Python installed
-2. Download an icon file and save it as `app.ico` in the project folder
-   - You can find free icons at IconEden or other icon websites
-   - The icon must be in `.ico` format
-
+1. Ensure Python and required dependencies are installed
+2. Place your desired application icon as `app.ico` in the project folder
 3. Run the build script:
-   ```batch
-   build.bat
-   ```
-
-4. The executable will be created in the `dist` folder as `NSFW_Blocker.exe`
+```batch
+build.bat
+```
+4. Find the compiled executable in the `dist` folder as `NSFW_Blocker.exe`
 
 ## Running the Application
 
-1. The application requires administrator privileges to modify the hosts file
-2. Right-click `NSFW_Blocker.exe` and select "Run as administrator"
-3. The application will run in the system tray
+1. Right-click `NSFW_Blocker.exe` and select "Run as administrator"
+2. The application will start and minimize to the system tray
+3. Access all features through the tray icon
+4. Monitor content safety through the main window
+
+## Features in Detail
+
+- **URL Management**
+  - Add individual URLs or bulk import
+  - Automatic URL validation
+  - Easy enable/disable of blocking
+
+- **Content Analysis**
+  - Real-time webpage scanning
+  - Content safety scoring
+  - Keyword match highlighting
+  - Categorized content detection
+
+- **System Integration**
+  - Automatic DNS cache flushing
+  - Host file management
+  - System startup integration
+  - Background operation
 
 ## Credits
 
-Created by Mustaffa96 (https://github.com/Mustaffa96/NSFW_BlockerQT)
+Created by [Mustaffa96](https://github.com/Mustaffa96/NSFW_BlockerQT)
+
+## License
+
+This project is open source and available under the MIT License.

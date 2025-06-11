@@ -150,11 +150,28 @@ class BlockerWindow(QMainWindow):
         self.setWindowTitle("NSFW Blocker")
         # Set window icon - handle both development and PyInstaller environments
         try:
-            base_path = getattr(sys, "_MEIPASS", os.path.dirname(__file__))
-            icon_path = os.path.join(base_path, "icon.png")
-            self.setWindowIcon(QIcon(icon_path))
+            if getattr(sys, 'frozen', False):
+                # Running in PyInstaller bundle
+                base_path = sys._MEIPASS
+                icon_path = os.path.join(base_path, "blocker", "icon.png")
+            else:
+                # Running in development
+                base_path = os.path.dirname(__file__)
+                icon_path = os.path.join(base_path, "icon.png")
+                
+            print(f"Attempting to load icon from: {icon_path}")
+            if os.path.exists(icon_path):
+                print(f"Icon file exists at: {icon_path}")
+                icon = QIcon(icon_path)
+                if not icon.isNull():
+                    self.setWindowIcon(icon)
+                    print("Icon loaded successfully")
+                else:
+                    print("Icon loaded but is null/invalid")
+            else:
+                print(f"Icon file not found at: {icon_path}")
         except Exception as e:
-            print(f"Could not load icon: {e}")
+            print(f"Could not load icon: {str(e)}")
 
         self.setGeometry(100, 100, 800, 600)
 

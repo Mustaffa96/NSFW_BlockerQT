@@ -196,3 +196,9 @@ cython_debug/
 # local storage
 blocked_keywords.json
 blocked_urls.json
+
+# Inno Setup Script
+.setup.iss
+
+# Output Folder
+.Output
